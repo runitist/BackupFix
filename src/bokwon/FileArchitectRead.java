@@ -21,7 +21,7 @@ public class FileArchitectRead {
 	public static void main(String[] args) throws IOException, InvalidKeyException, NoSuchAlgorithmException,
 			NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
 
-		final String PICYEAR = "201703"; // 해당 사진의 연월.
+		final String PICYEAR = "201704"; // 해당 사진의 연월.
 		final String FILEPATH = "D:\\PictureBackup\\" + PICYEAR + "\\backup.back"; // 읽어들일 대용량 파일의 위치.
 		final String DOCPATH = "D:\\PictureBackup\\" + PICYEAR + "\\"; // jpg를 출력할 위치
 

@@ -43,9 +43,11 @@ public class BokwonThread implements Runnable {
 		String FILEPATH;
 		String IMGPATH;
 		String REGPATH;
+		String ROOTPATH;
 		FILEPATH = "D:\\PictureBackup\\" + PICYEAR + "\\backup.back"; // 읽어들일 대용량 파일의 위치.
 		IMGPATH = "D:\\PictureBackup\\" + PICYEAR + "\\img\\gongimg\\"; // jpg를 출력할 위치
 		REGPATH = "D:\\PictureBackup\\" + PICYEAR + "\\img\\regimg\\"; // jpg를 출력할 위치
+		ROOTPATH = "D:\\PictureBackup\\" + PICYEAR + "\\img";
 
 		// 파일에서 읽어 들인다.
 		BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(FILEPATH), "euc-kr"));// 백업 파일
@@ -73,8 +75,19 @@ public class BokwonThread implements Runnable {
 					mkimgPath = IMGPATH + sarr[2].trim() + " " + sarr[1].trim() + " " + PICYEAR;
 					mkregPath = REGPATH + sarr[2].trim() + " " + sarr[1].trim() + " " + PICYEAR;
 
+					
 					File Folder = new File(mkimgPath);
 					File REGFolder = new File(mkregPath);
+					File RootFolder = new File(ROOTPATH);
+					
+					// 해당 디렉토리가 없을경우 디렉토리를 생성합니다.
+					if (!RootFolder.exists()) {
+						try {
+							RootFolder.mkdir(); // 폴더 생성합니다.
+						} catch (Exception e) {
+							e.getStackTrace();
+						}
+					}
 
 					// 해당 디렉토리가 없을경우 디렉토리를 생성합니다.
 					if (!Folder.exists()) {

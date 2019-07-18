@@ -21,11 +21,9 @@ import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.codec.binary.Base64;
 
 public class BokwonThread implements Runnable {
+	//멀티쓰레드 구현 클래스
 
-	static String PICYEAR; // 해당 사진의 연월. 201701
-	final static String FILEPATH = "D:\\PictureBackup\\" + PICYEAR + "\\backup.back"; // 읽어들일 대용량 파일의 위치.
-	final static String IMGPATH = "D:\\PictureBackup\\" + PICYEAR + "\\img\\gongimg\\"; // jpg를 출력할 위치
-	final static String REGPATH = "D:\\PictureBackup\\" + PICYEAR + "\\img\\regimg\\"; // jpg를 출력할 위치
+	String PICYEAR; // 해당 사진의 연월. 201701
 	
 	BokwonThread(String picyear){
 		PICYEAR = picyear;
@@ -34,13 +32,20 @@ public class BokwonThread implements Runnable {
 	@Override
 	public void run() {
 		try {
-			bokbok();
+			bokbok(PICYEAR);
 		}catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
-	public static void bokbok() throws IOException, InvalidKeyException, NoSuchAlgorithmException,
+	public void bokbok(String PICYEAR) throws IOException, InvalidKeyException, NoSuchAlgorithmException,
 			NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
+		String FILEPATH;
+		String IMGPATH;
+		String REGPATH;
+		FILEPATH = "D:\\PictureBackup\\" + PICYEAR + "\\backup.back"; // 읽어들일 대용량 파일의 위치.
+		IMGPATH = "D:\\PictureBackup\\" + PICYEAR + "\\img\\gongimg\\"; // jpg를 출력할 위치
+		REGPATH = "D:\\PictureBackup\\" + PICYEAR + "\\img\\regimg\\"; // jpg를 출력할 위치
 
 		// 파일에서 읽어 들인다.
 		BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(FILEPATH), "euc-kr"));// 백업 파일
@@ -59,7 +64,7 @@ public class BokwonThread implements Runnable {
 				int index = 0;// 동일인물 이미지에 대한 인덱스
 				sarr = line.split("\t");
 				/*
-				 * 1번 : 대상 식별 번호 2번 : 대상 이름 15번 : 이미지
+				 * 1번 : 대상 식별 번호, 2번 : 대상 이름, 15번 : 이미지
 				 */
 
 				if (!sarr[11].equals("O")) {// 이미지 식별
@@ -116,7 +121,7 @@ public class BokwonThread implements Runnable {
 					
 					//23번 컬럼의 이미지 추출
 					try {
-						byte[] bt = byteArrDecode(sarr[23], "s8LiEwT3if89Yq3i90hIo3HepqPfOhVd"); // 암호화된 이미지를 디코드
+						byte[] bt = byteArrDecode(sarr[16], "s8LiEwT3if89Yq3i90hIo3HepqPfOhVd"); // 암호화된 이미지를 디코드
 						fos = new FileOutputStream(imgname23);// 새파일 생성
 						fos.write(bt);// 생성된 파일에 바이너리 바이트 덮어쓰기.
 					}catch (Exception e) {
@@ -136,7 +141,7 @@ public class BokwonThread implements Runnable {
 		fos.close();
 	}
 
-	public static byte[] byteArrDecode(String str, String key)
+	public byte[] byteArrDecode(String str, String key)
 			throws java.io.UnsupportedEncodingException, NoSuchAlgorithmException, NoSuchPaddingException,
 			InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
 
@@ -151,7 +156,7 @@ public class BokwonThread implements Runnable {
 		return cipher.doFinal(textBytes);
 	}
 
-	public static void deleteEmptyDir(File file) {
+	public void deleteEmptyDir(File file) {
 		// 빈 디렉토리 삭제
 		if (file.isDirectory()) {
 

@@ -20,6 +20,9 @@ public class FileArchitectRead {
 
 	public static void main(String[] args) throws IOException, InvalidKeyException, NoSuchAlgorithmException,
 			NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
+		//백업파일내 구조를 알아보기위한 로직.
+		//해당 파일을 읽고, 컬럼별로 나눠서 architecture.txt 파일로 출력해줌.
+		//해당 텍스트 파일을 읽고 컬럼 분석이 가능.
 
 		final String PICYEAR = "201704"; // 해당 사진의 연월.
 		final String FILEPATH = "D:\\PictureBackup\\" + PICYEAR + "\\backup.back"; // 읽어들일 대용량 파일의 위치.

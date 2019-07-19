@@ -45,8 +45,8 @@ public class BokwonThread implements Runnable {
 		String REGPATH;
 		String ROOTPATH;
 		FILEPATH = "D:\\PictureBackup\\" + PICYEAR + "\\backup.back"; // 읽어들일 대용량 파일의 위치.
-		IMGPATH = "D:\\PictureBackup\\" + PICYEAR + "\\img\\gongimg\\"; // jpg를 출력할 위치
-		REGPATH = "D:\\PictureBackup\\" + PICYEAR + "\\img\\regimg\\"; // jpg를 출력할 위치
+		IMGPATH = "D:\\PictureBackup\\" + PICYEAR + "\\img\\gongimg"; // jpg를 출력할 위치
+		REGPATH = "D:\\PictureBackup\\" + PICYEAR + "\\img\\regimg"; // jpg를 출력할 위치
 		ROOTPATH = "D:\\PictureBackup\\" + PICYEAR + "\\img";
 
 		// 파일에서 읽어 들인다.

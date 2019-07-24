@@ -20,143 +20,333 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.codec.binary.Base64;
 
-public class BokwonThread implements Runnable {
-	//멀티쓰레드 구현 클래스
-
-	String PICYEAR; // 해당 사진의 연월. 201701
-	
-	BokwonThread(String picyear){
-		PICYEAR = picyear;
-	}
-	
-	@Override
-	public void run() {
-		try {
-			bokbok(PICYEAR);
-		}catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	public void bokbok(String PICYEAR) throws IOException, InvalidKeyException, NoSuchAlgorithmException,
+public class BokwonThread {
+	// 대용량 파일 복원 프로그램
+	public static void main(String[] args) throws IOException, InvalidKeyException, NoSuchAlgorithmException,
 			NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
-		String FILEPATH;
-		String IMGPATH;
-		String REGPATH;
-		String ROOTPATH;
-		FILEPATH = "D:\\PictureBackup\\" + PICYEAR + "\\backup.back"; // 읽어들일 대용량 파일의 위치.
-		IMGPATH = "D:\\PictureBackup\\" + PICYEAR + "\\img\\gongimg"; // jpg를 출력할 위치
-		REGPATH = "D:\\PictureBackup\\" + PICYEAR + "\\img\\regimg"; // jpg를 출력할 위치
-		ROOTPATH = "D:\\PictureBackup\\" + PICYEAR + "\\img";
+
+		// 사용 변수
+
+		final BufferedReader BR;// 백업 파일 정보를 가져올 버퍼 리더
+		final String BACKPATH;// 백업파일이 위치한 곳.
+		final String PICYEAR; // 해당 사진의 연월. 예 : 201701
+		final String BACKFILENAME;// 백업 파일 이름
+		final String AESCode;// AES 암호화 코드
+
+		// 년월 디렉토리 안의 Success 디렉토리명
+		final String SUCCESS_DIR;
+		final File SUCCESS_DIR_FILE;
+		final String SUCCESS_REG_DIR;
+		final File SUCCESS_REG_DIR_FILE;
+		final String SUCCESS_LIVE_DIR;
+		final File SUCCESS_LIVE_DIR_FILE;
+
+		// 년월 디렉토리 안의 Fail 디렉토리명
+		final String FAIL_DIR;
+		final File FAIL_DIR_FILE;
+		final String FAIL_REG_DIR;
+		final File FAIL_REG_DIR_FILE;
+		final String FAIL_LIVE_DIR;
+		final File FAIL_LIVE_DIR_FILE;
+
+		// 컬럼 변수
+		final int IMG_REG_COL;// reg 이미지 컬럼
+		final int IMG_LIVE_COL;// live 이미지 컬럼
+		final int IMG_EXIST;// 이미지가 있는지 확인하는 컬럼
+		final int IMG_SUCCESS;// 확인 성공 여부 컬럼
+		
+		
+		//유저 변경 사항 시작///////////////////////////////////////////////////////////////////////////////////////////
+		
+		// 변수 초기화. 컬럼 아키텍쳐 추출해서 확인후 변경.
+		BACKPATH = "D:\\PictureBackup"; //백업 파일이 위치한 디렉토리 1
+		PICYEAR = "201704";//백업파일이 위치한 디렉토리 2
+		BACKFILENAME = "backup.back";//백업파일 명
+		AESCode = "s8LiEwT3if89Yq3i90hIo3HepqPfOhVd";//AES키
+
+		IMG_REG_COL = 15;// reg 이미지 컬럼
+		IMG_LIVE_COL = 16;// live 이미지 컬럼
+		IMG_EXIST = 11;// 이미지가 있는지 확인하는 컬럼
+		IMG_SUCCESS = 18;// 확인 성공 여부 컬럼
+		
+		//유저 변경 사항 끝///////////////////////////////////////////////////////////////////////////////////////////
+
+		
+		// 자동 생성 디렉토리
+		// (BACKPATH)/(PICYEAR)/Success/Reg
+		SUCCESS_DIR = BACKPATH + "\\" + PICYEAR + "\\Success";
+		SUCCESS_REG_DIR = SUCCESS_DIR + "\\Reg";
+		SUCCESS_LIVE_DIR = SUCCESS_DIR + "\\Live";
+
+		SUCCESS_DIR_FILE = new File(SUCCESS_DIR);
+		SUCCESS_REG_DIR_FILE = new File(SUCCESS_REG_DIR);
+		SUCCESS_LIVE_DIR_FILE = new File(SUCCESS_LIVE_DIR);
+
+		// (BACKPATH)/(PICYEAR)/Fail/Reg
+		FAIL_DIR = BACKPATH + "\\" + PICYEAR + "\\Fail";
+		FAIL_REG_DIR = FAIL_DIR + "\\Reg";
+		FAIL_LIVE_DIR = FAIL_DIR + "\\Live";
+
+		FAIL_DIR_FILE = new File(FAIL_DIR);
+		FAIL_REG_DIR_FILE = new File(FAIL_REG_DIR);
+		FAIL_LIVE_DIR_FILE = new File(FAIL_LIVE_DIR);
+
+		// Success 내부 디렉토리 생성
+		if (!SUCCESS_DIR_FILE.exists()) {
+			// Success 디렉토리 생성
+			try {
+				SUCCESS_DIR_FILE.mkdir();
+			} catch (Exception e) {
+				e.getStackTrace();
+			}
+		}
+		if (!SUCCESS_REG_DIR_FILE.exists()) {
+			// Success/reg 디렉토리 생성
+			try {
+				SUCCESS_REG_DIR_FILE.mkdir();
+			} catch (Exception e) {
+				e.getStackTrace();
+			}
+		}
+		if (!SUCCESS_LIVE_DIR_FILE.exists()) {
+			// Success/Live 디렉토리 생성
+			try {
+				SUCCESS_LIVE_DIR_FILE.mkdir();
+			} catch (Exception e) {
+				e.getStackTrace();
+			}
+		}
+
+		// Fail 내부 디렉토리 생성
+		if (!FAIL_DIR_FILE.exists()) {
+			// Fail 디렉토리 생성
+			try {
+				FAIL_DIR_FILE.mkdir();
+			} catch (Exception e) {
+				e.getStackTrace();
+			}
+		}
+		if (!FAIL_REG_DIR_FILE.exists()) {
+			// Fail/Reg 디렉토리 생성
+			try {
+				FAIL_REG_DIR_FILE.mkdir();
+			} catch (Exception e) {
+				e.getStackTrace();
+			}
+		}
+		if (!FAIL_LIVE_DIR_FILE.exists()) {
+			// Fail/Live 디렉토리 생성
+			try {
+				FAIL_LIVE_DIR_FILE.mkdir();
+			} catch (Exception e) {
+				e.getStackTrace();
+			}
+		}
 
 		// 파일에서 읽어 들인다.
-		BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(FILEPATH), "euc-kr"));// 백업 파일
-																												// 리더
-		FileOutputStream fos = null;
-		String line = null;// 백업 파일 내 한 행 스트링
-		String[] sarr;// line 스트링을 tab을 기준으로 배열화
-		String imgname; // 15컬럼 이미지 파일 이름
-		String mkimgPath; // 이미지 파일 디렉토리
-		
-		String mkregPath; //23컬럼 이미지 파일 디렉토리
-		String imgname23; //23컬럼 이미지 파일 이름
+		BR = new BufferedReader(
+				new InputStreamReader(new FileInputStream(BACKPATH + "\\" + PICYEAR + "\\" + BACKFILENAME), "euc-kr"));// 리딩
+																														// 객체
+																														// 초기화
+		String line;// 버퍼 리더에서 한줄씩 읽어온 스트링
 
-		while ((line = br.readLine()) != null) {
+		while ((line = BR.readLine()) != null) {
+
 			try {
-				int index = 0;// 동일인물 이미지에 대한 인덱스
-				sarr = line.split("\t");
+				String[] sarr = line.split("\t"); // 버퍼리더에서 가져온 스트링을 \t단위로 컬럼을 나눔.
 				/*
-				 * 1번 : 대상 식별 번호, 2번 : 대상 이름, 15번 : 이미지
+				 * 주요 컬럼 :
+				 * 
+				 * 공통 : 1번 : 대상 식별 번호, 2번 : 대상 이름, 15번 : 이미지
+				 * 
+				 * 01, 02 파일 : 23번 : 이미지, 17번 : 매칭 성공 여부
+				 * 
+				 * 03, 04 파일 : 16번 : 이미지, 18번 : 매칭 성공 여부
 				 */
 
-				if (!sarr[11].equals("O")) {// 이미지 식별
-					imgname = "";
-					mkimgPath = "";
-					mkimgPath = IMGPATH + sarr[2].trim() + " " + sarr[1].trim() + " " + PICYEAR;
-					mkregPath = REGPATH + sarr[2].trim() + " " + sarr[1].trim() + " " + PICYEAR;
+				if (sarr[IMG_EXIST].equals("I")) {// 이미지 유무 확인
+					if (sarr[IMG_SUCCESS].equals("Y")) {
+						// 매칭 성공시
 
-					
-					File Folder = new File(mkimgPath);
-					File REGFolder = new File(mkregPath);
-					File RootFolder = new File(ROOTPATH);
-					
-					// 해당 디렉토리가 없을경우 디렉토리를 생성합니다.
-					if (!RootFolder.exists()) {
-						try {
-							RootFolder.mkdir(); // 폴더 생성합니다.
-						} catch (Exception e) {
-							e.getStackTrace();
-						}
-					}
+						if (!sarr[IMG_REG_COL].equals("\0")) {
+							// reg컬럼 이미지가 \0이 아니면
 
-					// 해당 디렉토리가 없을경우 디렉토리를 생성합니다.
-					if (!Folder.exists()) {
-						try {
-							Folder.mkdir(); // 폴더 생성합니다.
-						} catch (Exception e) {
-							e.getStackTrace();
-						}
-					}
-					if (!REGFolder.exists()) {
-						try {
-							REGFolder.mkdir(); // 폴더 생성합니다.
-						} catch (Exception e) {
-							e.getStackTrace();
-						}
-					}
+							// Success-Reg 디렉토리 생성
+							String succRegImgDir = SUCCESS_REG_DIR + "\\" + sarr[1] + "_" + sarr[2];// 각 이미지별 디렉토리 생성
+							File succRegImgDirFile = new File(succRegImgDir);
 
-					while (true) {// 동일인물 사진 파일에 대한 식별
-						imgname = mkimgPath + "\\"+ sarr[2].trim() + " " + sarr[1].trim() + " " + PICYEAR
-								+ " " + " (" + index + ")" + ".jpg";
-						File f = new File(imgname);
-						if (f.isFile()) {// 해당 인덱스의 파일이 이미 존재하면 인덱스를 1 올리고 다시 판별.
-							index++;
-						} else {
-							imgname23 = mkregPath + "\\"+ sarr[2].trim() + " " + sarr[1].trim() + " " + PICYEAR
-									+ " " + " (" + index + ")" + ".jpg";
-							break;
-						}
-					}
-					System.out.println(imgname);
-					System.out.println(imgname23+"(23)");
-					
-					//15번 컬럼의 이미지 추출
-					try {
-						byte[] bt = byteArrDecode(sarr[15], "s8LiEwT3if89Yq3i90hIo3HepqPfOhVd"); // 암호화된 이미지를 디코드
-						fos = new FileOutputStream(imgname);// 새파일 생성
-						fos.write(bt);// 생성된 파일에 바이너리 바이트 덮어쓰기.
-					}catch (Exception e) {
-						e.printStackTrace();
-						// 빈 폴더면 지우기
-						deleteEmptyDir(Folder);
-					}
-					///
-					
-					//23번 컬럼의 이미지 추출
-					try {
-						byte[] bt = byteArrDecode(sarr[16], "s8LiEwT3if89Yq3i90hIo3HepqPfOhVd"); // 암호화된 이미지를 디코드
-						fos = new FileOutputStream(imgname23);// 새파일 생성
-						fos.write(bt);// 생성된 파일에 바이너리 바이트 덮어쓰기.
-					}catch (Exception e) {
-						e.printStackTrace();
-						// 빈 폴더면 지우기
-						deleteEmptyDir(Folder);
-					}
-					///
+							if (!succRegImgDirFile.exists()) {
+								try {
+									succRegImgDirFile.mkdir(); // 폴더 생성합니다.
+								} catch (Exception e) {
+									e.getStackTrace();
+								}
+							}
 
+							// TODO : 이미지 인덱스 확인, 로직 변경 요망
+							int index = 0;
+							String sucRegImgName;
+							File imgFile;
+
+							while (true) {// 동일인물 사진 파일에 대한 식별
+								sucRegImgName = succRegImgDir + "\\" + sarr[1] + "_" + sarr[2] + "_" + PICYEAR + "_"
+										+ "(" + index + ")" + ".jpg";
+								imgFile = new File(sucRegImgName);
+								if (imgFile.isFile()) {// 해당 인덱스의 파일이 이미 존재하면 인덱스를 1 올리고 다시 판별.
+									index++;
+								} else {
+									break;
+								}
+							}
+							System.out.println(sucRegImgName);
+
+							// 이미지 추출
+							extractColumnImg(AESCode, sarr[IMG_REG_COL], imgFile);
+
+						}
+
+					}
+					if (!sarr[IMG_LIVE_COL].equals("\0")) {
+						// live 컬럼 이미지가 \0이 아니면
+
+						// Success-Live 디렉토리 생성
+						String succLiveImgDir = SUCCESS_LIVE_DIR + "\\" + sarr[1] + "_" + sarr[2];// 각 이미지별 디렉토리 생성
+						File succLiveImgDirFile = new File(succLiveImgDir);
+
+						if (!succLiveImgDirFile.exists()) {
+							try {
+								succLiveImgDirFile.mkdir(); // 폴더 생성합니다.
+							} catch (Exception e) {
+								e.getStackTrace();
+							}
+
+							// TODO : 이미지 인덱스 확인, 로직 변경 요망
+							int index = 0;
+							String sucLiveImgName;
+							File imgFile;
+
+							while (true) {// 동일인물 사진 파일에 대한 식별
+								sucLiveImgName = succLiveImgDir + "\\" + sarr[1] + "_" + sarr[2] + "_" + PICYEAR + "_"
+										+ "(" + index + ")" + ".jpg";
+								imgFile = new File(sucLiveImgName);
+								if (imgFile.isFile()) {// 해당 인덱스의 파일이 이미 존재하면 인덱스를 1 올리고 다시 판별.
+									index++;
+								} else {
+									break;
+								}
+							}
+							System.out.println(sucLiveImgName);
+
+							// 이미지 추출
+							extractColumnImg(AESCode, sarr[IMG_LIVE_COL], imgFile);
+
+						}
+
+					} else {
+						// 매칭 실패시
+						if (!sarr[IMG_REG_COL].equals("\0")) {
+							// reg컬럼 이미지가 \0이 아니면
+
+							// Fail-Reg 디렉토리 생성
+							String failRegImgDir = FAIL_REG_DIR + "\\" + sarr[1] + "_" + sarr[2];// 각 이미지별 디렉토리 생성
+							File failRegImgDirFile = new File(failRegImgDir);
+
+							if (!failRegImgDirFile.exists()) {
+								try {
+									failRegImgDirFile.mkdir(); // 폴더 생성합니다.
+								} catch (Exception e) {
+									e.getStackTrace();
+								}
+							}
+
+							// TODO : 이미지 인덱스 확인, 로직 변경 요망
+							int index = 0;
+							String failRegImgName;
+							File imgFile;
+
+							while (true) {// 동일인물 사진 파일에 대한 식별
+								failRegImgName = failRegImgDir + "\\" + sarr[1] + "_" + sarr[2] + "_" + PICYEAR + "_"
+										+ "(" + index + ")" + ".jpg";
+								imgFile = new File(failRegImgName);
+								if (imgFile.isFile()) {// 해당 인덱스의 파일이 이미 존재하면 인덱스를 1 올리고 다시 판별.
+									index++;
+								} else {
+									break;
+								}
+							}
+							System.out.println(failRegImgName);
+
+							// 이미지 추출
+							extractColumnImg(AESCode, sarr[IMG_REG_COL], imgFile);
+						}
+
+						if (!sarr[IMG_LIVE_COL].equals("\0")) {
+							// live 컬럼 이미지가 \0이 아니면
+
+							// Fail-Live 디렉토리 생성
+							String failLiveImgDir = SUCCESS_LIVE_DIR + "\\" + sarr[1] + "_" + sarr[2];// 각 이미지별 디렉토리 생성
+							File failLiveImgDirFile = new File(failLiveImgDir);
+
+							if (!failLiveImgDirFile.exists()) {
+								try {
+									failLiveImgDirFile.mkdir(); // 폴더 생성합니다.
+								} catch (Exception e) {
+									e.getStackTrace();
+								}
+							}
+
+							// TODO : 이미지 인덱스 확인, 로직 변경 요망
+							int index = 0;
+							String failLiveImgName;
+							File imgFile;
+
+							while (true) {// 동일인물 사진 파일에 대한 식별
+								failLiveImgName = failLiveImgDir + "\\" + sarr[1] + "_" + sarr[2] + "_" + PICYEAR + "_"
+										+ "(" + index + ")" + ".jpg";
+								imgFile = new File(failLiveImgName);
+								if (imgFile.isFile()) {// 해당 인덱스의 파일이 이미 존재하면 인덱스를 1 올리고 다시 판별.
+									index++;
+								} else {
+									break;
+								}
+							}
+							System.out.println(failLiveImgName);
+
+							// 이미지 추출
+							extractColumnImg(AESCode, sarr[IMG_LIVE_COL], imgFile);
+
+						}
+
+					}
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
-		System.out.println("--------------복구 완료---------------");
-		br.close();
-		fos.close();
+
+		System.out.println("-------------------추출 완료----------------------");
+		BR.close();
 	}
 
-	public byte[] byteArrDecode(String str, String key)
+	private static void extractColumnImg(String AESCode, String sarrColString, File imgFile) {
+		// 이미지 파일 추출 메소드
+		try {
+			if (!sarrColString.equals("\0")) {
+				byte[] bt = byteArrDecode(sarrColString, AESCode); // 암호화된 이미지를 디코드
+				FileOutputStream fos = new FileOutputStream(imgFile);// 새파일 생성
+				fos.write(bt);// 생성된 파일에 바이너리 바이트 덮어쓰기.
+				fos.close();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static byte[] byteArrDecode(String str, String key)
 			throws java.io.UnsupportedEncodingException, NoSuchAlgorithmException, NoSuchPaddingException,
 			InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
+		// AES 암호 해독 메소드, 아파치 코덱 필요.(org.apache.commons.codec.binary.Base64를 구글링해서 다운받고
+		// 프로젝트에 빌드패스할것.)
 
 		byte[] byteIv = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00 };
@@ -168,22 +358,5 @@ public class BokwonThread implements Runnable {
 		cipher.init(Cipher.DECRYPT_MODE, newKey, ivSpec);
 		return cipher.doFinal(textBytes);
 	}
-
-	public void deleteEmptyDir(File file) {
-		// 빈 디렉토리 삭제
-		if (file.isDirectory()) {
-
-			for (File subFile : file.listFiles()) {
-				if (subFile.isDirectory()) {
-					deleteEmptyDir(subFile);
-				}
-			}
-			if (file.listFiles().length == 0) {
-				file.delete();
-			}
-		}
-	}
-
-	
 
 }
